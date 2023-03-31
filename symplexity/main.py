@@ -1,16 +1,16 @@
 from arb import ArbOpportunity, execute_arb
-from api import slug_to_id
+from config import load
+import argparse
 
-
-def main():
-    id1 = slug_to_id("will-trump-be-indicted-by-march-31")
-    id2 = slug_to_id("will-trump-be-indicted-by-march-31-4c8adb0a72fa")
-    arb_opportunities = [
-        ArbOpportunity(0.995,[(id1, 'YES'), (id2, 'NO')]),
-        ArbOpportunity(0.995,[(id1, 'NO'), (id2, 'YES')]),
-    ]
+def main(go: bool):
+    dry_run = not go
+    config = load()
+    arb_opportunities = [ArbOpportunity.from_dict(d) for d in config['arb_opportunities']]
     for opportunity in arb_opportunities:
-        execute_arb(opportunity, dry_run=True)
+        execute_arb(opportunity, dry_run=dry_run)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--go', action='store_true')
+    args = parser.parse_args()
+    main(args.go)

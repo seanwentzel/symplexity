@@ -12,6 +12,6 @@ def load() -> dict:
 def write(config: dict):
     # untested
     write_path = f"{path()}.write"
-    with open(write_path) as fout:
+    with open(write_path, 'w') as fout:
         json.dump(config, fout)
     os.replace(src=write_path,dst=path())
