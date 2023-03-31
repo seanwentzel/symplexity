@@ -20,7 +20,7 @@ class RecommendedTrade:
     shares: float
 
     def __repr__(self):
-        return f"{self.market.base.url} // M {self.mana} {self.outcome} for {self.shares} shares to {self.expected_prob}"
+        return f"{self.market.base.url} // M {self.mana:.2f} {self.outcome} for {self.shares:.2f} shares to {self.expected_prob:.2f}"
     
     @staticmethod
     def yes_for_virtual(mana: float, target: market.VirtualMarket) -> "RecommendedTrade":

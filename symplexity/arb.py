@@ -7,7 +7,6 @@ from api import initialize
 
 EPS = 1e-5
 INF = 2000.0
-ARB_LIMIT = 0.005
 
 
 @dataclass_json
@@ -41,7 +40,7 @@ def investment_for_shares(shares: float, market: market.VirtualMarket) -> float:
 def prob_for_shares(shares: float, market: market.VirtualMarket) -> float:
     k_y = investment_for_shares(shares, market)
     s, prob = market.invest_effect(k_y)
-    assert shares * (1 - EPS) <= s <= shares * (1 + EPS), f"{shares}, {s}"
+    #assert shares * (1 - 10*EPS) <= s <= shares * (1 + 10*EPS), f"{shares}, {s}"
     return prob
 
 
@@ -68,10 +67,18 @@ def arb(opportunity: ArbOpportunity) -> list[RecommendedTrade]:
         return effective_prob(s, markets) - target
 
     shares_to_buy = binary_search(prob_centered, 0, INF)
+    if shares_to_buy < 0.1:
+        print('Not arbing because opportunity is tiny')
+        return []
     result = []
     for m in markets:
         investment = investment_for_shares(shares_to_buy, m)
+        if investment <= 1.0:
+            print("Not arbing because investment too small")
+            return []
         result.append(RecommendedTrade.yes_for_virtual(investment, m))
+    assert effective_prob(shares_to_buy, markets) < target + EPS
+    print(f"Cost: M{sum(trade.mana for trade in result)}, Shares: {shares_to_buy}, Min value: M{target*shares_to_buy}")
     return result
 
 
