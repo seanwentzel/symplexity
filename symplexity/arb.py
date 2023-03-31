@@ -1,5 +1,8 @@
+from dataclasses import dataclass
+from dataclasses_json import dataclass_json
+
 import market
-from trades import RecommendedTrade, execute_trades
+from trades import RecommendedTrade, execute_trades, Outcome
 from api import initialize
 
 EPS = 1e-5
@@ -7,26 +10,11 @@ INF = 2000.0
 ARB_LIMIT = 0.005
 
 
-def arb(m1: market.ApiMarket, m2: market.ApiMarket) -> list[RecommendedTrade]:
-    prob1 = m1.prob()
-    prob2 = m2.prob()
-    if abs(prob1 - prob2) < ARB_LIMIT:
-        print(f"Not arbing because the markets are too close:")
-        print(f"{prob1}, {m1.base.slug}")
-        print(f"{prob2}, {m2.base.slug}")
-        return []
-    if prob1 > prob2:
-        return arb(m2, m1)
-
-    def target(k):
-        _, p1, p2 = k_yes(k, m1, m2)
-        return -(p2 - p1 - ARB_LIMIT)
-
-    k_y = binary_search(target, 0.0, INF)
-    k_n, p1, p2 = k_yes(k_y, m1, m2)
-    arb1 = RecommendedTrade(m1, k_y, "YES", p1)
-    arb2 = RecommendedTrade(m2, k_n, "NO", p2)
-    return [arb1, arb2]
+@dataclass_json
+@dataclass
+class ArbOpportunity:
+    maximum: float
+    markets: list[tuple[str, Outcome]]
 
 
 def binary_search(fn, lo, hi):
@@ -39,31 +27,64 @@ def binary_search(fn, lo, hi):
         return binary_search(fn, lo, mid)
 
 
-def k_yes(k: float, m1: market.ApiMarket, m2: market.ApiMarket):
-    s_y, m1_p = m1.invest_effect(k)
+def investment_for_shares(shares: float, market: market.VirtualMarket) -> float:
+    """
+    How much mana do you need to buy
+    """
+    def target(k):
+        s, prob = market.invest_effect(k)
+        return s - shares
 
-    m2_inv = market.InverseMarket(m2)
-
-    def shares_no(inv_no):
-        s_n, m2_p = m2_inv.invest_effect(inv_no)
-        return s_n - s_y
-
-    k_n = binary_search(shares_no, 0.0, INF)
-    s_n, m2_p = m2_inv.invest_effect(k_n)
-    m2_p = 1 - m2_p
-    return k_n, m1_p, m2_p
+    return binary_search(target, 0, INF)
 
 
-def execute_arb(slug1: str, slug2: str):
+def prob_for_shares(shares: float, market: market.VirtualMarket) -> float:
+    k_y = investment_for_shares(shares, market)
+    s, prob = market.invest_effect(k_y)
+    assert shares * (1 - EPS) <= s <= shares * (1 + EPS), f"{shares}, {s}"
+    return prob
+
+
+def effective_prob(shares: float, markets: list[market.VirtualMarket]) -> float:
+    return sum(prob_for_shares(shares, m) for m in markets)
+
+
+def arb(opportunity: ArbOpportunity) -> list[RecommendedTrade]:
+    target = opportunity.maximum
+    markets = []
+    for id, outcome in opportunity.markets:
+        if outcome == "YES":
+            markets.append(market.ApiMarket.from_id(id))
+        elif outcome == "NO":
+            markets.append(market.InverseMarket(market.ApiMarket.from_id(id)))
+        else:
+            raise RuntimeError("impossible code path")
+    probs = [m.prob() for m in markets]
+    if sum(probs) > target:
+        print("Not arbing because there is no arbitrage gap.")
+        return []
+
+    def prob_centered(s):
+        return effective_prob(s, markets) - target
+
+    shares_to_buy = binary_search(prob_centered, 0, INF)
+    result = []
+    for m in markets:
+        investment = investment_for_shares(shares_to_buy, m)
+        result.append(RecommendedTrade.yes_for_virtual(investment, m))
+    return result
+
+
+def execute_arb(opportunity: ArbOpportunity, dry_run: bool = True):
     wrapper, me = initialize()
-    market1 = market.ApiMarket.from_slug(slug1)
-    market2 = market.ApiMarket.from_slug(slug2)
-    trades = arb(market1, market2)
+    if dry_run:
+        wrapper = None
+    trades = arb(opportunity)
     print("Ran arb, got the following trades:")
     for trade in trades:
         print(f"  - {trade}")
-    result = execute_trades(wrapper, trades)
+    result = execute_trades(wrapper, trades, dry_run=dry_run)
     if result:
         print("Succeeded arb")
     else:
-        print("Something went wrong!")
+        print("Validation failed")

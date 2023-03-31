@@ -1,13 +1,16 @@
-from arb import execute_arb
+from arb import ArbOpportunity, execute_arb
+from api import slug_to_id
 
-arb_opportunities = [
-    ("will-trump-be-indicted-by-march-31", "will-trump-be-indicted-by-march-31-4c8adb0a72fa")
-]
 
 def main():
-    for (slug1, slug2) in arb_opportunities:
-        print(f"Attempting arb of {slug1} and {slug2}")
-        execute_arb(slug1, slug2)
+    id1 = slug_to_id("will-trump-be-indicted-by-march-31")
+    id2 = slug_to_id("will-trump-be-indicted-by-march-31-4c8adb0a72fa")
+    arb_opportunities = [
+        ArbOpportunity(0.995,[(id1, 'YES'), (id2, 'NO')]),
+        ArbOpportunity(0.995,[(id1, 'NO'), (id2, 'YES')]),
+    ]
+    for opportunity in arb_opportunities:
+        execute_arb(opportunity, dry_run=True)
 
 if __name__ == "__main__":
     main()

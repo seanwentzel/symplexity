@@ -1,1 +1,2 @@
+dataclasses-json == 0.5.7
 manifoldpy == 1.1.2

@@ -64,6 +64,10 @@ class ApiMarket(VirtualMarket):
     def from_slug(slug) -> "ApiMarket":
         return ApiMarket(api.get_slug(slug))
 
+    @staticmethod
+    def from_id(id) -> "ApiMarket":
+        return ApiMarket(api.get_market(id))
+
     def p(self):
         return self.base.p
 
@@ -89,9 +93,9 @@ class InverseMarket(VirtualMarket):
     and with exactly opposite liquidity provision.
     """
 
-    base: VirtualMarket
+    base: ApiMarket
 
-    def __init__(self, base: VirtualMarket) -> None:
+    def __init__(self, base: ApiMarket) -> None:
         super().__init__()
         self.base = base
 

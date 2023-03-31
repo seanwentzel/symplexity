@@ -22,3 +22,6 @@ def initialize() -> tuple[api.APIWrapper, dict]:
     wrapper = api.APIWrapper(api_key)
     me = parse(wrapper.me())
     return (wrapper, me)
+
+def slug_to_id(slug: str):
+    return api.get_slug(slug).id
