@@ -17,7 +17,7 @@ def parse(response) -> dict:
     return json.loads(response.text)
 
 def initialize() -> tuple[api.APIWrapper, dict]:
-    api_key = config.load()["api_key"]
+    api_key = config.load_config()["api_key"]
 
     wrapper = api.APIWrapper(api_key)
     me = parse(wrapper.me())

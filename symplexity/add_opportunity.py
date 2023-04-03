@@ -22,9 +22,9 @@ def main():
             positions.append((id, outcome))
     arb = ArbOpportunity(maximum, positions)
 
-    conf = config.load()
+    conf = config.load_config()
     conf['arb_opportunities'].append(arb.to_dict())
-    config.write(conf)
+    config.write_config(conf)
 
 
 if __name__ == "__main__":
