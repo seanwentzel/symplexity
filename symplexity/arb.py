@@ -93,7 +93,7 @@ def execute_arb(opportunity: ArbOpportunity, dry_run: bool = True):
     if dry_run:
         wrapper = None
     trades = arb(opportunity)
-    logger.info(f"Ran arb, got  {len(trades)} trades.")
+    logger.info(f"Ran arb, got {len(trades)} trades.")
     result = execute_trades(wrapper, trades, dry_run=dry_run)
     if result:
         logger.info("Succeeded arb")
