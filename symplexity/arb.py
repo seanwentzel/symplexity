@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from dataclasses_json import dataclass_json
 import logging
 
 import market
@@ -7,16 +6,15 @@ from trades import RecommendedTrade, execute_trades, Outcome
 from api import initialize
 
 EPS = 1e-5
-INF = 2000.0
 
 logger = logging.getLogger("symplexity.arb")
 
 
-@dataclass_json
 @dataclass
 class ArbOpportunity:
     maximum: float
-    markets: list[tuple[str, Outcome]]
+    markets: list[market.VirtualMarket]
+    max_shares: float
 
 
 def binary_search(fn, lo, hi):
@@ -31,14 +29,14 @@ def binary_search(fn, lo, hi):
 
 def investment_for_shares(shares: float, market: market.VirtualMarket) -> float:
     """
-    How much mana do you need to buy
+    How much mana do you need to buy `shares` shares
     """
 
     def target(k):
         s, prob = market.invest_effect(k)
         return s - shares
 
-    return binary_search(target, 0, INF)
+    return binary_search(target, 0, shares)  # assuming each share costs < M1
 
 
 def prob_for_shares(shares: float, market: market.VirtualMarket) -> float:
@@ -54,14 +52,7 @@ def effective_prob(shares: float, markets: list[market.VirtualMarket]) -> float:
 
 def arb(opportunity: ArbOpportunity) -> list[RecommendedTrade]:
     target = opportunity.maximum
-    markets = []
-    for id, outcome in opportunity.markets:
-        if outcome == "YES":
-            markets.append(market.ApiMarket.from_id(id))
-        elif outcome == "NO":
-            markets.append(market.InverseMarket(market.ApiMarket.from_id(id)))
-        else:
-            raise RuntimeError("impossible code path")
+    markets = opportunity.markets
     probs = [m.prob() for m in markets]
     if sum(probs) > target:
         logger.info("Not arbing because there is no arbitrage gap.")
@@ -70,7 +61,7 @@ def arb(opportunity: ArbOpportunity) -> list[RecommendedTrade]:
     def prob_centered(s):
         return effective_prob(s, markets) - target
 
-    shares_to_buy = binary_search(prob_centered, 0, INF)
+    shares_to_buy = binary_search(prob_centered, 0, opportunity.max_shares)
     if shares_to_buy < 0.1:
         logger.info("Not arbing because opportunity is tiny")
         return []

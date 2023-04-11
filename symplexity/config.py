@@ -18,7 +18,7 @@ def load_config() -> dict:
 def write_config(config: dict):
     write_path = f"{CONFIG_PATH}.write"
     with open(write_path, "w") as fout:
-        json.dump(config, fout)
+        json.dump(config, fout, indent=2)
     os.replace(src=write_path, dst=CONFIG_PATH)
 
 

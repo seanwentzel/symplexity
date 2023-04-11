@@ -1,11 +1,10 @@
 import market
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Optional
+from basic_types import Outcome
 import manifoldpy.api as api
 
 import logging
-
-Outcome = Literal["YES", "NO"]
 
 logger = logging.getLogger("symplexity.trades")
 
@@ -38,7 +37,6 @@ class RecommendedTrade:
 
 
 class TradeError(RuntimeError):
-
     status_code: Optional[int]
     body: Optional[str]
     trade: RecommendedTrade
@@ -92,7 +90,9 @@ def execute_trades(
     validation = all(validate_market(t.market) for t in trades)
     if not validation:
         return False
+    message = "Dry run" if dry_run else "Making"
     for trade in trades:
+        logger.info(f"{message} trade {trade}")
         if not dry_run:
             response = wrapper.make_bet(
                 amount=trade.mana,
@@ -103,6 +103,5 @@ def execute_trades(
                 error = TradeError(response.status_code, response.text, trade, trades)
                 logger.error(error)
                 raise error
-        else:
-            logger.info(f"Dry run trade {trade}")
+
     return True

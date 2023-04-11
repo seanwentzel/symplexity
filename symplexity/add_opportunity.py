@@ -1,6 +1,7 @@
 import api
-from arb import ArbOpportunity
 import config
+from relationships import GeneralArbOpportunity
+from basic_types import Direction
 
 
 def main():
@@ -8,7 +9,7 @@ def main():
     maximum = float(input())
     print("Enter positions as `YES/NO url` [enter to finish]")
     done = False
-    positions = []
+    directions = []
     while not done:
         pos = input().strip()
         if pos == "":
@@ -19,11 +20,11 @@ def main():
                 raise RuntimeError("bad outocme")
             slug = url.split("/")[-1]
             id = api.slug_to_id(slug)
-            positions.append((id, outcome))
-    arb = ArbOpportunity(maximum, positions)
+            directions.append(Direction(id, outcome))
+    arb = GeneralArbOpportunity(maximum, directions)
 
     conf = config.load_config()
-    conf['arb_opportunities'].append(arb.to_dict())
+    conf["arb_opportunities"].append(arb.to_dict())
     config.write_config(conf)
 
 

@@ -1,6 +1,9 @@
 import abc
 import manifoldpy.api as api
 
+from api import get_position
+from basic_types import Direction
+
 MECHANISM = "cpmm-1"
 
 
@@ -27,6 +30,10 @@ class VirtualMarket(metaclass=abc.ABCMeta):
     def n(self) -> float:
         pass
 
+    @abc.abstractmethod
+    def get_position(self, user) -> float:
+        pass
+
     def prob(self) -> float:
         return raw_prob(self.p(), self.y(), self.n())
 
@@ -46,6 +53,18 @@ class VirtualMarket(metaclass=abc.ABCMeta):
         n_2 = self.n() + inv
         y_t = (self.c() / (n_2) ** (1 - p)) ** (1.0 / p)
         return y_2 - y_t, raw_prob(p, y_t, n_2)
+
+    @abc.abstractmethod
+    def inverse(self) -> "VirtualMarket":
+        pass
+
+    @staticmethod
+    def from_direction(direction: Direction) -> "VirtualMarket":
+        base_market = ApiMarket.from_id(direction.id)
+        if direction.outcome == "YES":
+            return base_market
+        else:
+            return InverseMarket(base_market)
 
 
 class ApiMarket(VirtualMarket):
@@ -77,8 +96,15 @@ class ApiMarket(VirtualMarket):
     def n(self):
         return self.base.pool["NO"]
 
+    def get_position(self, user) -> float:
+        # xcxc
+        return get_position(user, self.base)
+
     def total_liquidity(self):
         return self.base.totalLiquidity
+
+    def inverse(self) -> "InverseMarket":
+        return InverseMarket(self)
 
     def latest(self) -> "ApiMarket":
         """
@@ -107,3 +133,9 @@ class InverseMarket(VirtualMarket):
 
     def n(self):
         return self.base.y()
+
+    def get_position(self, user) -> float:
+        return -self.base.get_position(user)
+
+    def inverse(self) -> ApiMarket:
+        return self.base
