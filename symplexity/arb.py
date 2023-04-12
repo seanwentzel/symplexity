@@ -79,7 +79,7 @@ def arb(opportunity: ArbOpportunity) -> list[RecommendedTrade]:
     return result
 
 
-def execute_arb(opportunity: ArbOpportunity, dry_run: bool = True):
+def execute_arb(opportunity: ArbOpportunity, dry_run: bool = True) -> int:
     wrapper, me = initialize()
     if dry_run:
         wrapper = None
@@ -88,5 +88,7 @@ def execute_arb(opportunity: ArbOpportunity, dry_run: bool = True):
     result = execute_trades(wrapper, trades, dry_run=dry_run)
     if result:
         logger.info("Succeeded arb")
+        return len(trades)
     else:
-        logger.info("Validation failed")
+        logger.warn("Validation failed")
+        return -1

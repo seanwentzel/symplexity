@@ -1,30 +1,61 @@
+from typing import Iterator
 import api
 import config
-from relationships import GeneralArbOpportunity
+from relationships import Equivalence, GeneralArbOpportunity, Ordering
 from basic_types import Direction
 
-
-def main():
-    print("What is the maximum total probability? [Enter 100% as 1.0]")
-    maximum = float(input())
+def capture_directions() -> Iterator[Direction]:
     print("Enter positions as `YES/NO url` [enter to finish]")
-    done = False
-    directions = []
-    while not done:
+    while True:
         pos = input().strip()
         if pos == "":
-            done = True
+            return
         else:
-            outcome, url = pos.split()
+            segments = pos.split()
+            if len(segments) == 1:
+                outcome = "YES"
+                url = segments[0]
+            elif len(segments) == 2:
+                outcome, url = segments
+            else:
+                raise RuntimeError("bad input")
             if outcome not in ["YES", "NO"]:
-                raise RuntimeError("bad outocme")
+                raise RuntimeError("bad outcome")
             slug = url.split("/")[-1]
             id = api.slug_to_id(slug)
-            directions.append(Direction(id, outcome))
-    arb = GeneralArbOpportunity(maximum, directions)
+            yield Direction(id, outcome)
 
+
+def capture_general_opp() -> GeneralArbOpportunity:
+    print("What is the maximum total probability? [Enter 100% as 1.0]")
+    maximum = float(input())
+    directions = list(capture_directions())
+    return GeneralArbOpportunity(maximum, directions)
+
+def capture_equivalence() -> Equivalence:
+    directions = list(capture_directions())
+    return Equivalence(directions)
+
+def capture_ordering() -> Ordering:
+    directions = list(capture_directions())
+    return Ordering(directions)
+
+def main():
     conf = config.load_config()
-    conf["arb_opportunities"].append(arb.to_dict())
+    print("""Type:
+    1. Equivalence
+    2. Sequence
+    3. General
+    """)
+    typ = int(input().strip())
+    assert typ in [1,2,3]
+    if typ == 1:
+        conf["equivalences"].append(capture_equivalence().to_dict())
+    elif typ == 2:
+        conf["orderings"].append(capture_ordering().to_dict())
+    elif typ == 3:
+        conf["arb_opportunities"].append(arb.to_dict())
+    
     config.write_config(conf)
 
 

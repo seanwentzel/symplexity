@@ -1,12 +1,10 @@
+import argparse
+import itertools
+
+from api import initialize
 from arb import execute_arb
 from config import init_logger, load_config
-from relationships import GeneralArbOpportunity
-import argparse
-
-from market import ApiMarket
-from relationships import Equivalence
-from basic_types import Direction
-from api import initialize
+from relationships import Equivalence, GeneralArbOpportunity
 
 
 def main(go: bool):
@@ -16,16 +14,12 @@ def main(go: bool):
     wrapper, me = initialize()
     try:
         # Try equiv
-        slugs = [
-            "will-recep-tayyip-erdogan-be-reelec",
-            "will-erdogan-win-the-2023-turkish-p-8691b1f6a772",
-            "will-erdogan-win-the-2023-turkish-p",
-        ]
-        ids = [ApiMarket.from_slug(s).base.id for s in slugs]
-        equivalence = Equivalence([Direction(id, "YES") for id in ids])
-        gen = equivalence.generate_opportunities(me)
-        opp = next(gen)
-        execute_arb(opp, dry_run=dry_run)
+        equivalences = [Equivalence.from_dict(d) for d in config["equivalences"]]
+        for relationship in equivalences:
+            # There's something going wrong here
+            gen = itertools.islice(relationship.generate_opportunities(me), 1)
+            for opp in gen:
+                execute_arb(opp, dry_run=dry_run)
 
         # General
         general_arb_opportunities = [
