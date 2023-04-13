@@ -1,8 +1,11 @@
 from typing import Iterator
-import api
-import config
-from relationships import Equivalence, GeneralArbOpportunity, Ordering
-from basic_types import Direction
+
+import symplexity.api as api
+import symplexity.config as config
+from symplexity.basic_types import Direction
+from symplexity.relationships import (Equivalence, GeneralArbOpportunity,
+                                      Ordering)
+
 
 def capture_directions() -> Iterator[Direction]:
     print("Enter positions as `YES/NO url` [enter to finish]")

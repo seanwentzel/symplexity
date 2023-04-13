@@ -1,10 +1,10 @@
 import argparse
 import itertools
 
-from api import initialize
-from arb import execute_arb
-from config import init_logger, load_config
-from relationships import Equivalence, GeneralArbOpportunity
+from symplexity.api import initialize
+from symplexity.arb import execute_arb
+from symplexity.config import init_logger, load_config
+from symplexity.relationships import Equivalence, GeneralArbOpportunity
 
 
 def main(go: bool):
