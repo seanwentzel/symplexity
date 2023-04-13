@@ -49,4 +49,4 @@ def slug_to_id(slug: str):
 
 def create_test_market(wrapper: api.APIWrapper, nonce: str='') -> str:
     response = wrapper.create_market(outcomeType="BINARY",question=f"test market {nonce}, resolves N/A", description="just testing", closeTime=1839236868000, visibility="unlisted", initialProb=50)
-    return parse(response.text)["id"]
+    return parse(response)["id"]
