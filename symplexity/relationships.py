@@ -16,7 +16,6 @@ INF = 2000.0
 
 logger = logging.getLogger("symplexity.relationships")
 
-
 @dataclass_json
 @dataclass
 class Equivalence:
@@ -36,7 +35,8 @@ class Equivalence:
             markets.sort(key=lambda m: m.prob())
             positions = [market.get_position(me) for market in markets]
             for m, p in zip(markets, positions):
-                logger.debug(m, p)
+                logger.debug("Looking for opportunities in:")
+                logger.debug(f"Market: {m}, Position: {p}, Probability: {m.prob()}")
             for i, market in enumerate(markets):
                 low_pos = positions[i]
                 if low_pos > -1:
@@ -45,6 +45,8 @@ class Equivalence:
                     hi_pos = positions[j]
                     if hi_pos < 1:
                         continue
+                    logger.debug(f"High: {hi_pos}, low: {low_pos}")
+                    logger.debug(f"High prob: {markets[j].prob()}, low prob: {market.prob()}")
                     max_shares = min(hi_pos, -low_pos)
                     logger.info(f"Found exit opportunity for M{max_shares}")
                     return ArbOpportunity(

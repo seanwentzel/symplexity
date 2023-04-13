@@ -1,11 +1,13 @@
 import config
 
+import logging
 import json
 import requests
 import manifoldpy.api as api
 
 BASE_URI = "https://manifold.markets/api/v0"
 
+logger = logging.getLogger("symplexity.api")
 
 def get_position(me: dict, market: api.Market) -> float:
     """
@@ -16,9 +18,12 @@ def get_position(me: dict, market: api.Market) -> float:
         f"{BASE_URI}/market/{market.id}/positions?userId={me['id']}"
     )
     posns = parse(response)
+    logger.debug(f"got positions for {market.url}")
+    logger.debug(posns)
     assert len(posns) <= 1
     if len(posns) == 0:
         return 0
+    
     pos = posns[0]["totalShares"]
     y = pos["YES"] if "YES" in pos else 0
     n = pos["NO"] if "NO" in pos else 0

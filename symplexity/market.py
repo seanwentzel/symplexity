@@ -79,6 +79,9 @@ class ApiMarket(VirtualMarket):
         assert base.mechanism == MECHANISM
         self.base = base
 
+    def __repr__(self) -> str:
+        return f"ApiMarket({self.base.url})"
+
     @staticmethod
     def from_slug(slug) -> "ApiMarket":
         return ApiMarket(api.get_slug(slug))
