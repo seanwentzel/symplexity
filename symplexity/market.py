@@ -1,8 +1,9 @@
 import abc
+
 import manifoldpy.api as api
 
-from api import get_position
-from basic_types import Direction
+from symplexity.api import get_position
+from symplexity.basic_types import Direction
 
 MECHANISM = "cpmm-1"
 

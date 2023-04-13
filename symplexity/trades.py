@@ -1,10 +1,11 @@
-import market
+import logging
 from dataclasses import dataclass
 from typing import Optional
-from basic_types import Outcome
+
 import manifoldpy.api as api
 
-import logging
+import symplexity.market as market
+from symplexity.basic_types import Outcome
 
 logger = logging.getLogger("symplexity.trades")
 

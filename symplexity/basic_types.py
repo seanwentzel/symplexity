@@ -1,6 +1,6 @@
+from dataclasses import dataclass
 from typing import Literal
 
-from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 Outcome = Literal["YES", "NO"]

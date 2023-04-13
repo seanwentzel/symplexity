@@ -1,14 +1,13 @@
-from dataclasses import dataclass
-from dataclasses_json import dataclass_json
-
-from basic_types import Direction, Outcome
-from collections.abc import Iterator
 import logging
+from collections.abc import Iterator
+from dataclasses import dataclass
 from typing import Optional
 
-import api
-from arb import ArbOpportunity
-from market import VirtualMarket
+from dataclasses_json import dataclass_json
+
+from symplexity.arb import ArbOpportunity
+from symplexity.basic_types import Direction, Outcome
+from symplexity.market import VirtualMarket
 
 EQUIVALENT_MARGIN = 0.005
 ORDERED_MARGIN = 0.02

@@ -1,9 +1,9 @@
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 
-import market
-from trades import RecommendedTrade, execute_trades, Outcome
-from api import initialize
+import symplexity.market as market
+from symplexity.api import initialize
+from symplexity.trades import Outcome, RecommendedTrade, execute_trades
 
 EPS = 1e-5
 

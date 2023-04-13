@@ -1,9 +1,10 @@
-import config
-
-import logging
 import json
-import requests
+import logging
+
 import manifoldpy.api as api
+import requests
+
+import symplexity.config as config
 
 BASE_URI = "https://manifold.markets/api/v0"
 
