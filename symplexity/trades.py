@@ -89,6 +89,9 @@ def execute_trades(
     """
     validation = all(validate_market(t.market) for t in trades)
     if not validation:
+        logger.warn("Validation failed on trades")
+        for trade in trades:
+            logger.warn(f"  - {trade}")
         return False
     message = "Dry run" if dry_run else "Making"
     for trade in trades:

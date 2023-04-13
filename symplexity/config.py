@@ -27,6 +27,9 @@ def init_logger() -> logging.Logger:
     logger.setLevel(logging.INFO)
     file_handler = handlers.TimedRotatingFileHandler(LOG_PATH, when="D")
     out_handler = logging.StreamHandler(sys.stdout)
+    formatter=logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s',datefmt='%Y-%m-%d %H:%M:%S')
+    file_handler.setFormatter(formatter)
+    out_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     logger.addHandler(out_handler)
     return logger
