@@ -1,8 +1,6 @@
 import abc
 
-import manifoldpy.api as api
-
-from symplexity.api import get_position
+from symplexity import api
 from symplexity.basic_types import Direction
 
 MECHANISM = "cpmm-1"
@@ -84,14 +82,10 @@ class ApiMarket(VirtualMarket):
         return f"ApiMarket({self.base.url})"
 
     @staticmethod
-    def from_slug(slug) -> "ApiMarket":
-        return ApiMarket(api.get_slug(slug))
-
-    @staticmethod
     def from_id(id) -> "ApiMarket":
-        return ApiMarket(api.get_market(id))
+        return ApiMarket(api.wrapper.market(id))
 
-    def p(self):
+    def p(self) -> float:
         return self.base.p
 
     def y(self):
@@ -101,8 +95,10 @@ class ApiMarket(VirtualMarket):
         return self.base.pool["NO"]
 
     def get_position(self, user) -> float:
-        # xcxc
-        return get_position(user, self.base)
+        pos = api.wrapper.get_position(api.wrapper.me.id, self.base.id)
+        y = pos["YES"] if "YES" in pos else 0
+        n = pos["NO"] if "NO" in pos else 0
+        return y - n
 
     def total_liquidity(self):
         return self.base.totalLiquidity
@@ -114,7 +110,7 @@ class ApiMarket(VirtualMarket):
         """
         Fetch a fresh copy of this market. Useful for validating that your trades are still profitable.
         """
-        return ApiMarket(api.get_market(self.base.id))
+        return ApiMarket(api.wrapper.market(self.base.id))
 
 
 class InverseMarket(VirtualMarket):

@@ -8,10 +8,13 @@ import manifoldpy.api as api
 import requests
 
 import symplexity.config as config
+from symplexity.basic_types import Outcome
 
 BASE_URI = "https://manifold.markets/api/v0"
 
 logger = logging.getLogger("symplexity.api")
+
+Market = api.Market # use the `manifoldpy` Market type
 
 
 @dataclass
@@ -61,27 +64,28 @@ class Wrapper:
     def from_config() -> "Wrapper":
         api_key = config.load_config()["api_key"]
         return Wrapper(api_key)
+    
+    def get_position(self, user_id: str, market_id: str) -> dict[Outcome, float]:
+        """
+        Experimental.
+        Returns a positive number of shares for `YES` positions, and a negative number for `NO` positions.
+        """
+        response = requests.get(
+            f"{BASE_URI}/market/{market_id}/positions?userId={user_id}"
+        )
+        posns = parse(response)
+        logger.debug(f"got positions for {market_id}")
+        logger.debug(posns)
+        assert len(posns) <= 1
+        if len(posns) == 0:
+            return {}
+
+        pos = posns[0]["totalShares"]
+        return pos
+        
 
 
-def get_position(me: dict, market: api.Market) -> float:
-    """
-    Experimental.
-    Returns a positive number of shares for `YES` positions, and a negative number for `NO` positions.
-    """
-    response = requests.get(
-        f"{BASE_URI}/market/{market.id}/positions?userId={me['id']}"
-    )
-    posns = parse(response)
-    logger.debug(f"got positions for {market.url}")
-    logger.debug(posns)
-    assert len(posns) <= 1
-    if len(posns) == 0:
-        return 0
 
-    pos = posns[0]["totalShares"]
-    y = pos["YES"] if "YES" in pos else 0
-    n = pos["NO"] if "NO" in pos else 0
-    return y - n
 
 
 def parse(response) -> dict:
@@ -110,3 +114,5 @@ def create_test_market(wrapper: api.APIWrapper, nonce: str = "") -> str:
         initialProb=50,
     )
     return parse(response)["id"]
+
+wrapper = Wrapper.from_config()
