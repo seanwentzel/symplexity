@@ -25,6 +25,18 @@ class RecommendedTrade:
 
     def __repr__(self):
         return f"{self.market.base.url} // M {self.mana:.2f} {self.outcome} for {self.shares:.2f} shares to {self.expected_prob:.4f}"
+    
+    def cost(self) -> float:
+        provisional = self.mana
+        if self.outcome == 'NO' and self.market.position > 0:
+            # if we have YES shares we can sell them instead of buying NO
+            adjustment = min(self.shares, self.market.position)
+        elif self.outcome == 'YES' and self.market.position < 0:
+            adjustment = min(self.shares, -self.market.position)
+        else:
+            adjustment = 0
+        return provisional - adjustment
+
 
     @staticmethod
     def yes_for_virtual(
@@ -94,7 +106,9 @@ def execute_trades(
         for trade in trades:
             logger.warn(f"  - {trade}")
         return False
+    total_cost = sum(trade.cost() for trade in trades)
     message = "Dry run" if dry_run else "Making"
+    logger.info(f"{message} {len(trades)} trades for total M{total_cost}")
     for trade in trades:
         logger.info(f"{message} trade {trade}")
         if not dry_run:

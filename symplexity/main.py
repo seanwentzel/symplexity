@@ -7,7 +7,6 @@ from symplexity.relationships import Equivalence, GeneralArbOpportunity
 from symplexity.trades import execute_trades
 
 
-
 def main(go: bool):
     dry_run = not go
     logger = init_logger()

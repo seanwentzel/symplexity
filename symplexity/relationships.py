@@ -47,6 +47,7 @@ class Equivalence(DataClassJsonMixin):
                         max_shares=max_shares,
                     )
                     if len(attempt) > 0:
+                        logger.info(f"Found exit for {attempt[0].shares} shares")
                         return attempt
 
             # Transfer 1-sided positions
@@ -59,6 +60,7 @@ class Equivalence(DataClassJsonMixin):
                         max_shares=max_shares,
                     )
                     if len(attempt) > 0:
+                        logger.info(f"Found transfer for {attempt[0].shares} shares")
                         return attempt
 
             # Open an extreme position
