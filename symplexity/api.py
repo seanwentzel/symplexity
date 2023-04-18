@@ -69,10 +69,11 @@ class Wrapper:
         Experimental.
         Returns a positive number of shares for `YES` positions, and a negative number for `NO` positions.
         """
-        response = requests.get(
+
+        request = requests.Request("GET",
             f"{BASE_URI}/market/{market_id}/positions?userId={user_id}"
         )
-        posns = parse(response)
+        posns = json.loads(self._request(request))
         logger.debug(f"got positions for {market_id}")
         logger.debug(posns)
         assert len(posns) <= 1
