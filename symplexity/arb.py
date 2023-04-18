@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 import symplexity.market as market
 from symplexity.api import initialize
-from symplexity.trades import Outcome, RecommendedTrade, execute_trades
+from symplexity.trades import RecommendedTrade, execute_trades
 
 EPS = 1e-5
 
@@ -50,26 +50,24 @@ def effective_prob(shares: float, markets: list[market.VirtualMarket]) -> float:
     return sum(prob_for_shares(shares, m) for m in markets)
 
 
-def arb(opportunity: ArbOpportunity) -> list[RecommendedTrade]:
-    target = opportunity.maximum
-    markets = opportunity.markets
+def arb(markets: list[market.VirtualMarket], target: float, max_shares: float) -> list[RecommendedTrade]:
     probs = [m.prob() for m in markets]
     if sum(probs) > target:
-        logger.info("Not arbing because there is no arbitrage gap.")
+        logger.debug("Not arbing because there is no arbitrage gap.")
         return []
 
     def prob_centered(s):
         return effective_prob(s, markets) - target
 
-    shares_to_buy = binary_search(prob_centered, 0, opportunity.max_shares)
+    shares_to_buy = binary_search(prob_centered, 0, max_shares)
     if shares_to_buy < 0.1:
-        logger.info("Not arbing because opportunity is tiny")
+        logger.debug("Not arbing because opportunity is tiny")
         return []
     result = []
     for m in markets:
         investment = investment_for_shares(shares_to_buy, m)
         if investment <= 1.0:
-            logger.info("Not arbing because investment too small")
+            logger.debug("Not arbing because investment too small")
             return []
         result.append(RecommendedTrade.yes_for_virtual(investment, m))
     assert effective_prob(shares_to_buy, markets) < target + EPS

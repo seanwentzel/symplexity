@@ -1,4 +1,5 @@
 import abc
+from functools import cached_property
 
 from symplexity import api
 from symplexity.basic_types import Direction
@@ -29,8 +30,9 @@ class VirtualMarket(metaclass=abc.ABCMeta):
     def n(self) -> float:
         pass
 
+    @cached_property
     @abc.abstractmethod
-    def get_position(self, user) -> float:
+    def position(self) -> float:
         pass
 
     def prob(self) -> float:
@@ -94,7 +96,8 @@ class ApiMarket(VirtualMarket):
     def n(self):
         return self.base.pool["NO"]
 
-    def get_position(self, user) -> float:
+    @cached_property
+    def position(self) -> float:
         pos = api.wrapper.get_position(api.wrapper.me.id, self.base.id)
         y = pos["YES"] if "YES" in pos else 0
         n = pos["NO"] if "NO" in pos else 0
@@ -134,8 +137,9 @@ class InverseMarket(VirtualMarket):
     def n(self):
         return self.base.y()
 
-    def get_position(self, user) -> float:
-        return -self.base.get_position(user)
+    @property
+    def position(self) -> float:
+        return -self.base.position
 
     def inverse(self) -> ApiMarket:
         return self.base

@@ -2,8 +2,7 @@ from dataclasses import dataclass
 import json
 import logging
 from uuid import uuid4
-from dataclasses_json import DataClassJsonMixin, dataclass_json
-
+from dataclasses_json import DataClassJsonMixin
 import manifoldpy.api as api
 import requests
 
@@ -14,7 +13,7 @@ BASE_URI = "https://manifold.markets/api/v0"
 
 logger = logging.getLogger("symplexity.api")
 
-Market = api.Market # use the `manifoldpy` Market type
+Market = api.Market  # use the `manifoldpy` Market type
 
 
 @dataclass
@@ -64,7 +63,7 @@ class Wrapper:
     def from_config() -> "Wrapper":
         api_key = config.load_config()["api_key"]
         return Wrapper(api_key)
-    
+
     def get_position(self, user_id: str, market_id: str) -> dict[Outcome, float]:
         """
         Experimental.
@@ -82,10 +81,6 @@ class Wrapper:
 
         pos = posns[0]["totalShares"]
         return pos
-        
-
-
-
 
 
 def parse(response) -> dict:
@@ -114,5 +109,6 @@ def create_test_market(wrapper: api.APIWrapper, nonce: str = "") -> str:
         initialProb=50,
     )
     return parse(response)["id"]
+
 
 wrapper = Wrapper.from_config()
