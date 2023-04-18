@@ -71,9 +71,6 @@ def arb(markets: list[market.VirtualMarket], target: float, max_shares: float) -
             return []
         result.append(RecommendedTrade.yes_for_virtual(investment, m))
     assert effective_prob(shares_to_buy, markets) < target + EPS
-    logger.info(
-        f"Cost: M{sum(trade.mana for trade in result)}, Shares: {shares_to_buy}, Min value: M{target*shares_to_buy}"
-    )
     return result
 
 
