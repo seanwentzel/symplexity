@@ -3,9 +3,9 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Optional
 
-from dataclasses_json import DataClassJsonMixin, dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
-from symplexity.arb import ArbOpportunity, arb
+from symplexity.arb import arb
 from symplexity.basic_types import Direction, Outcome
 from symplexity.market import VirtualMarket
 from symplexity.trades import RecommendedTrade
@@ -76,6 +76,13 @@ class Equivalence(DataClassJsonMixin):
             yield res
             res = find_opp()
 
+    def __str__(self) -> str:
+        res = "Equivalence:\n"
+        for dir in self.directions:
+            market = VirtualMarket.from_direction(dir)
+            res += f"  - {market} {dir.id}\n"
+        return res
+
 
 @dataclass
 class Ordering(DataClassJsonMixin):
@@ -101,3 +108,10 @@ class GeneralArbOpportunity(DataClassJsonMixin):
         trades = arb(markets=markets, target=self.maximum, max_shares=self.max_shares)
         if len(trades) > 0:
             yield trades
+
+    def __str__(self) -> str:
+        res = "General:\n"
+        for dir in self.markets:
+            market = VirtualMarket.from_direction(dir)
+            res += f"  - {market} {dir.id}\n"
+        return res

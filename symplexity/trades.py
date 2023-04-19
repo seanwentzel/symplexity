@@ -25,18 +25,17 @@ class RecommendedTrade:
 
     def __repr__(self):
         return f"{self.market.base.url} // M {self.mana:.2f} {self.outcome} for {self.shares:.2f} shares to {self.expected_prob:.4f}"
-    
+
     def cost(self) -> float:
         provisional = self.mana
-        if self.outcome == 'NO' and self.market.position > 0:
+        if self.outcome == "NO" and self.market.position > 0:
             # if we have YES shares we can sell them instead of buying NO
             adjustment = min(self.shares, self.market.position)
-        elif self.outcome == 'YES' and self.market.position < 0:
+        elif self.outcome == "YES" and self.market.position < 0:
             adjustment = min(self.shares, -self.market.position)
         else:
             adjustment = 0
         return provisional - adjustment
-
 
     @staticmethod
     def yes_for_virtual(
@@ -93,7 +92,10 @@ def validate_market(market: market.ApiMarket) -> bool:
 
 
 def execute_trades(
-    wrapper: api.APIWrapper, trades: list[RecommendedTrade], dry_run: bool = True
+    wrapper: api.APIWrapper,
+    trades: list[RecommendedTrade],
+    dry_run: bool = True,
+    max_cost: float = 0.0,
 ) -> bool:
     """
     Check all the trades are still valid, then execute them. `print` out
@@ -107,8 +109,12 @@ def execute_trades(
             logger.warn(f"  - {trade}")
         return False
     total_cost = sum(trade.cost() for trade in trades)
+
     message = "Dry run" if dry_run else "Making"
     logger.info(f"{message} {len(trades)} trades for total M{total_cost}")
+    if total_cost > max_cost:
+        logger.info("Trades are too expensive")
+        return False
     for trade in trades:
         logger.info(f"{message} trade {trade}")
         if not dry_run:

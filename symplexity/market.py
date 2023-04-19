@@ -80,8 +80,8 @@ class ApiMarket(VirtualMarket):
         assert base.mechanism == MECHANISM
         self.base = base
 
-    def __repr__(self) -> str:
-        return f"ApiMarket({self.base.url})"
+    def __str__(self) -> str:
+        return f"YES {self.base.url}"
 
     @staticmethod
     def from_id(id) -> "ApiMarket":
@@ -127,6 +127,9 @@ class InverseMarket(VirtualMarket):
     def __init__(self, base: ApiMarket) -> None:
         super().__init__()
         self.base = base
+
+    def __str__(self) -> str:
+        return f"NO {self.base.base.url}"
 
     def p(self):
         return 1 - self.base.p()
