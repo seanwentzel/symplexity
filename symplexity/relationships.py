@@ -22,7 +22,7 @@ class Equivalence(DataClassJsonMixin):
     directions: list[Direction]
     margin: float = EQUIVALENT_MARGIN
 
-    def generate_opportunities(self) -> Iterator[list[RecommendedTrade]]:
+    def generate_opportunities(self, max_cost: Optional[float]) -> Iterator[list[RecommendedTrade]]:
         """
         First, find positions we can exit out of at a profit.
         Second, find positions we can transfer at a profit.
@@ -68,7 +68,7 @@ class Equivalence(DataClassJsonMixin):
                 return arb(
                     markets=[markets[0], markets[-1].inverse()],
                     target=1.0 - self.margin,
-                    max_shares=INF,
+                    max_shares=INF if max_cost is None else max_cost # max_cost is not perfect but it's close enough for now
                 )
 
         res = find_opp()

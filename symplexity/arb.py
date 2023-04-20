@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from typing import Callable
 
 import symplexity.market as market
 from symplexity.api import initialize
@@ -17,11 +18,11 @@ class ArbOpportunity:
     max_shares: float
 
 
-def binary_search(fn, lo, hi):
+def binary_search(fn: Callable[[float], bool], lo, hi):
     mid = (hi + lo) / 2
     if hi - lo < EPS:
         return mid
-    if fn(mid) < 0:
+    if not fn(mid):
         return binary_search(fn, mid, hi)
     else:
         return binary_search(fn, lo, mid)
@@ -32,9 +33,9 @@ def investment_for_shares(shares: float, market: market.VirtualMarket) -> float:
     How much mana do you need to buy `shares` shares
     """
 
-    def target(k):
+    def target(k: float) -> bool:
         s, prob = market.invest_effect(k)
-        return s - shares
+        return s > shares
 
     return binary_search(target, 0, shares)  # assuming each share costs < M1
 
@@ -56,8 +57,8 @@ def arb(markets: list[market.VirtualMarket], target: float, max_shares: float) -
         logger.debug("Not arbing because there is no arbitrage gap.")
         return []
 
-    def prob_centered(s):
-        return effective_prob(s, markets) - target
+    def prob_centered(s: float) -> bool:
+        return effective_prob(s, markets) >= target
 
     shares_to_buy = binary_search(prob_centered, 0, max_shares)
     if shares_to_buy < 0.1:
