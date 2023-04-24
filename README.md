@@ -38,4 +38,5 @@ The Manifold API caches requests for 15 seconds. Volume is low, but this is very
 if you want to arbitrage the same market multiple times. To get around this we insert a cachebusting
 param into each request. This means we can't directly use the `manifoldpy` API.
 
-My plan is to rate limit our API usage to much lower than Manifold's posted limits to offset the cost of cachebusting.
+To avoid [overusing](https://docs.manifold.markets/api#usage-guidelines) the API, we rate limit our access. For reads
+especially, we should limit much lower than the requested rate.

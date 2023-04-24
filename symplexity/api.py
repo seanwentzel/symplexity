@@ -8,6 +8,7 @@ import requests
 
 import symplexity.config as config
 from symplexity.basic_types import Outcome
+import symplexity.rate_limiter as rate_limiter
 
 BASE_URI = "https://manifold.markets/api/v0"
 
@@ -31,10 +32,25 @@ class ApiError(Exception):
 class Wrapper:
     session: requests.Session
     me: User
+    read_limiter: rate_limiter.LeakyBucket
+    write_limiter: rate_limiter.LeakyBucket
+    _manifoldpy: api.APIWrapper
 
-    def __init__(self, key) -> None:
+    @staticmethod
+    def from_config() -> "Wrapper":
+        api_key = config.load_config()["api_key"]
+        return Wrapper(api_key)
+
+    def __init__(self, key: str, read_only: bool = False) -> None:
         self.session = requests.Session()
         self.session.headers["Authorization"] = f"Key {key}"
+        if not read_only:
+            self._manifoldpy = api.APIWrapper(key)
+
+        # TODO: make these configurable
+        self.read_limiter = rate_limiter.LeakyBucket(300, 20)
+        self.write_limiter = rate_limiter.LeakyBucket(20, 0.1)
+
         self.me = self._me()
 
     def _request(self, req: requests.Request) -> str:
@@ -49,20 +65,17 @@ class Wrapper:
 
     def _me(self) -> User:
         req = requests.Request("GET", api.ME_URL)
+        self.read_limiter.block_until_allowed(1)
         return User.from_json(self._request(req))
 
     def market(self, id) -> api.Market:
         req = requests.Request("GET", api.SINGLE_MARKET_URL.format(id))
+        self.read_limiter.block_until_allowed(1)
         return api.Market.from_json(json.loads(self._request(req)))
 
     def balance(self) -> float:
         latest_me = self._me()
         return latest_me.balance
-
-    @staticmethod
-    def from_config() -> "Wrapper":
-        api_key = config.load_config()["api_key"]
-        return Wrapper(api_key)
 
     def get_position(self, user_id: str, market_id: str) -> dict[Outcome, float]:
         """
@@ -70,9 +83,10 @@ class Wrapper:
         Returns a positive number of shares for `YES` positions, and a negative number for `NO` positions.
         """
 
-        request = requests.Request("GET",
-            f"{BASE_URI}/market/{market_id}/positions?userId={user_id}"
+        request = requests.Request(
+            "GET", f"{BASE_URI}/market/{market_id}/positions?userId={user_id}"
         )
+        self.read_limiter.block_until_allowed(1)
         posns = json.loads(self._request(request))
         logger.debug(f"got positions for {market_id}")
         logger.debug(posns)
@@ -82,6 +96,22 @@ class Wrapper:
 
         pos = posns[0]["totalShares"]
         return pos
+
+    def lease_writes(self, tokens: int) -> list[rate_limiter.Token]:
+        return self.write_limiter.block_until_allowed(tokens)
+
+    def make_bet(
+        self, mana: float, market_id: str, outcome: Outcome, token: rate_limiter.Token
+    ) -> str:
+        token.use()
+        response = self._manifoldpy.make_bet(
+            amount=mana,
+            contractId=market_id,
+            outcome=outcome,
+        )
+        if 400 <= response.status_code:
+            raise ApiError(response.status_code, response.text)
+        return response.text
 
 
 def parse(response) -> dict:

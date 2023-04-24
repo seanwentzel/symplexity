@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-import manifoldpy.api as api
+from symplexity.api import ApiError, Wrapper
 
 import symplexity.market as market
 from symplexity.basic_types import Outcome
@@ -92,7 +92,7 @@ def validate_market(market: market.ApiMarket) -> bool:
 
 
 def execute_trades(
-    wrapper: api.APIWrapper,
+    wrapper: Wrapper,
     trades: list[RecommendedTrade],
     dry_run: bool = True,
     max_cost: float = 0.0,
@@ -115,16 +115,19 @@ def execute_trades(
     if total_cost > max_cost:
         logger.info("Trades are too expensive")
         return False
-    for trade in trades:
+    tokens = wrapper.lease_writes(len(trades))
+    for token, trade in zip(tokens,trades):
         logger.info(f"{message} trade {trade}")
         if not dry_run:
-            response = wrapper.make_bet(
-                amount=trade.mana,
-                contractId=trade.market.base.id,
-                outcome=trade.outcome,
-            )
-            if response.status_code != 200:
-                error = TradeError(response.status_code, response.text, trade, trades)
+            try:
+                response = wrapper.make_bet(
+                    mana=trade.mana,
+                    market_id=trade.market.base.id,
+                    outcome=trade.outcome,
+                    token=token
+                )
+            except ApiError as e:
+                error = TradeError(e.status, e.body, trade, trades)
                 logger.error(error)
                 raise error
 

@@ -1,7 +1,7 @@
 import argparse
 import itertools
 
-from symplexity.api import initialize
+import symplexity.api as api
 from symplexity.config import init_logger, load_config
 from symplexity.relationships import Equivalence, GeneralArbOpportunity
 from symplexity.trades import execute_trades
@@ -9,9 +9,12 @@ from symplexity.trades import execute_trades
 
 def main(go: bool, max_cost: float, iterations_per_opp: int = 5):
     dry_run = not go
+    if dry_run:
+        # No point retrying the same opportunity over and over
+        iterations_per_opp = 1
     logger = init_logger()
     config = load_config()
-    wrapper, me = initialize()
+
     try:
         # Try equiv
         equivalences = [Equivalence.from_dict(d) for d in config["equivalences"]]
@@ -19,7 +22,7 @@ def main(go: bool, max_cost: float, iterations_per_opp: int = 5):
             # There's something going wrong here
             gen = itertools.islice(relationship.generate_opportunities(max_cost), iterations_per_opp)
             for recommended_trades in gen:
-                execute_trades(wrapper, recommended_trades, dry_run=dry_run, max_cost=max_cost)
+                execute_trades(api.wrapper, recommended_trades, dry_run=dry_run, max_cost=max_cost)
 
         # General
         general_arb_opportunities = [
@@ -27,7 +30,7 @@ def main(go: bool, max_cost: float, iterations_per_opp: int = 5):
         ]
         for opportunity in general_arb_opportunities:
             for recommended_trades in opportunity.generate_opportunities():
-                execute_trades(wrapper, recommended_trades, dry_run=dry_run, max_cost=max_cost)
+                execute_trades(api.wrapper, recommended_trades, dry_run=dry_run, max_cost=max_cost)
     finally:
         for handler in logger.handlers:
             handler.flush()
