@@ -9,6 +9,7 @@ from symplexity.basic_types import Outcome
 
 logger = logging.getLogger("symplexity.trades")
 
+BALANCE_BUFFER = 100
 
 @dataclass
 class RecommendedTrade:
@@ -90,7 +91,6 @@ def validate_market(market: market.ApiMarket) -> bool:
         return False
     return market.total_liquidity() == updated_market.total_liquidity()
 
-
 def execute_trades(
     wrapper: Wrapper,
     trades: list[RecommendedTrade],
@@ -109,6 +109,15 @@ def execute_trades(
             logger.warn(f"  - {trade}")
         return False
     total_cost = sum(trade.cost() for trade in trades)
+
+    if total_cost + BALANCE_BUFFER > wrapper.balance():
+        logger.warn("Not making trades because of insufficient balance")
+        return False
+
+    # We must do negative-cost trades first, because this guarantees the invariant that
+    # if we have enough balance for the sum of the trades, we have enough
+    # balance for each trade individually
+    trades.sort(key=lambda trade: trade.cost()) 
 
     message = "Dry run" if dry_run else "Making"
     logger.info(f"{message} {len(trades)} trades for total M{total_cost}")
