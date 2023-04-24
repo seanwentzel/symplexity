@@ -51,7 +51,9 @@ def effective_prob(shares: float, markets: list[market.VirtualMarket]) -> float:
     return sum(prob_for_shares(shares, m) for m in markets)
 
 
-def arb(markets: list[market.VirtualMarket], target: float, max_shares: float) -> list[RecommendedTrade]:
+def arb(
+    markets: list[market.VirtualMarket], target: float, max_shares: float
+) -> list[RecommendedTrade]:
     probs = [m.prob() for m in markets]
     if sum(probs) > target:
         logger.debug("Not arbing because there is no arbitrage gap.")
@@ -73,18 +75,3 @@ def arb(markets: list[market.VirtualMarket], target: float, max_shares: float) -
         result.append(RecommendedTrade.yes_for_virtual(investment, m))
     assert effective_prob(shares_to_buy, markets) < target + EPS
     return result
-
-
-def execute_arb(opportunity: ArbOpportunity, dry_run: bool = True) -> int:
-    wrapper, me = initialize()
-    if dry_run:
-        wrapper = None
-    trades = arb(opportunity)
-    logger.info(f"Ran arb, got {len(trades)} trades.")
-    result = execute_trades(wrapper, trades, dry_run=dry_run)
-    if result:
-        logger.info("Succeeded arb")
-        return len(trades)
-    else:
-        logger.warn("Validation failed")
-        return -1
