@@ -57,7 +57,7 @@ def main():
     elif typ == 2:
         conf["orderings"].append(capture_ordering().to_dict())
     elif typ == 3:
-        conf["arb_opportunities"].append(arb.to_dict())
+        conf["arb_opportunities"].append(capture_general_opp().to_dict())
     
     config.write_config(conf)
 
