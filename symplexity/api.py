@@ -114,10 +114,6 @@ class Wrapper:
         return response.text
 
 
-def parse(response) -> dict:
-    return json.loads(response.text)
-
-
 def slug_to_id(slug: str):
     return api.get_slug(slug).id
 
@@ -131,7 +127,7 @@ def create_test_market(wrapper: Wrapper, nonce: str = "") -> str:
         visibility="unlisted",
         initialProb=50,
     )
-    return parse(response)["id"]
+    return json.loads(response.text)["id"]
 
 
 wrapper = Wrapper.from_config()
