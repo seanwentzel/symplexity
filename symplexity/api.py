@@ -118,20 +118,12 @@ def parse(response) -> dict:
     return json.loads(response.text)
 
 
-def initialize() -> tuple[api.APIWrapper, dict]:
-    api_key = config.load_config()["api_key"]
-
-    wrapper = api.APIWrapper(api_key)
-    me = parse(wrapper.me())
-    return (wrapper, me)
-
-
 def slug_to_id(slug: str):
     return api.get_slug(slug).id
 
 
-def create_test_market(wrapper: api.APIWrapper, nonce: str = "") -> str:
-    response = wrapper.create_market(
+def create_test_market(wrapper: Wrapper, nonce: str = "") -> str:
+    response = wrapper._manifoldpy.create_market(
         outcomeType="BINARY",
         question=f"test market {nonce}, resolves N/A",
         description="just testing",

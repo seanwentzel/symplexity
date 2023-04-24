@@ -3,8 +3,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 import symplexity.market as market
-from symplexity.api import initialize
-from symplexity.trades import RecommendedTrade, execute_trades
+from symplexity.trades import RecommendedTrade
 
 EPS = 1e-5
 
