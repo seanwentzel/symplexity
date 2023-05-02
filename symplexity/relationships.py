@@ -22,7 +22,7 @@ class Equivalence(DataClassJsonMixin):
     directions: list[Direction]
     margin: float = EQUIVALENT_MARGIN
 
-    def generate_opportunities(self, max_cost: Optional[float]) -> Iterator[list[RecommendedTrade]]:
+    def generate_opportunities(self, max_cost: float) -> Iterator[list[RecommendedTrade]]:
         """
         First, find positions we can exit out of at a profit.
         Second, find positions we can transfer at a profit.
@@ -86,15 +86,53 @@ class Equivalence(DataClassJsonMixin):
 
 @dataclass
 class Ordering(DataClassJsonMixin):
-    markets: list[Direction]
+    directions: list[Direction] #least to most probable
     margin: float = ORDERED_MARGIN
 
-    def generate_opportunities(self) -> Iterator[list[RecommendedTrade]]:
+    def generate_opportunities(self, max_cost: float) -> Iterator[list[RecommendedTrade]]:
         """
         We don't expect to ever find positions we can exit out of.
         Instead prioritize maximum gaps.
         """
-        pass
+        def find_opp() -> Optional[list[RecommendedTrade]]:
+            markets = [VirtualMarket.from_direction(d) for d in self.directions]
+            positions = [market.position for market in markets]
+            for m, p in zip(markets, positions):
+                logger.debug("Looking for opportunities in:")
+                logger.debug(f"Market: {m}, Position: {p}, Probability: {m.prob():.4f}")
+
+            # Transfer 1-sided positions
+            for i in range(len(markets)):
+                for j in range(len(markets) - 1, i, -1):
+                    if markets[i].prob() > markets[j].prob():
+                        max_shares = max(positions[i], -positions[j])
+                        attempt = arb(
+                            markets=[markets[i].inverse(), markets[j]],
+                            target=1.0,
+                            max_shares=max_shares,
+                        )
+                        if len(attempt) > 0:
+                            logger.info(f"Found transfer for {attempt[0].shares} shares")
+                            return attempt
+            # Enter positions
+            for i in range(len(markets)):
+                for j in range(len(markets) - 1, i, -1):
+                    if markets[i].prob() > markets[j].prob():
+                        attempt = arb(
+                            markets=[markets[i].inverse(), markets[j]],
+                            target=1.0-ORDERED_MARGIN,
+                            max_shares=max_cost,
+                        )
+                        if len(attempt) > 0:
+                            logger.info(f"Found new position for {attempt[0].shares} shares")
+                            return attempt
+
+
+        res = find_opp()
+        while res is not None and len(res) > 0:
+            yield res
+            res = find_opp()
+
 
 
 @dataclass
