@@ -16,7 +16,7 @@ Currently supported relationships:
 
 - `N` directions should sum to at least `p` (`GeneralArbOpportunity`)
 - A set of directions are equivalent to each other (and will all resolve the same way).
-- (coming soon) A sequence of directions should be ordered from most to least probable.
+- A sequence of directions should be ordered from least to most probable.
 - (coming later) "Bayesian quadrangles": four markets for `A`, `B`, `B | A` and `B | !A`
 
 ## How it works
