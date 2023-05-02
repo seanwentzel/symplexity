@@ -52,7 +52,7 @@ class LeakyBucket:
             sleep = maybe_tokens+0.05
             logger.info(f"Sleeping {sleep} seconds until tokens available")
             time.sleep(sleep)
-        maybe_tokens = self.lease(tokens)
+            maybe_tokens = self.lease(tokens)
         assert not isinstance(maybe_tokens, float)
         return maybe_tokens
 
